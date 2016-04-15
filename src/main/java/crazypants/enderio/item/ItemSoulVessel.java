@@ -194,36 +194,46 @@ public class ItemSoulVessel extends Item implements IResourceTooltipProvider {
     if(!Config.soulVesselCapturesBosses && entity instanceof IBossDisplayData) {
       return false;
     }
-
+    
+    //TODO: Uzumachi StartEdit
     NBTTagCompound root = new NBTTagCompound();
-    root.setString("id", entityId);
-    entity.writeToNBT(root);
-
     ItemStack capturedMobVessel = new ItemStack(EnderIO.itemSoulVessel);
-    capturedMobVessel.setTagCompound(root);
-    setDisplayNameFromEntityNameTag(capturedMobVessel, entity);
-
-    player.swingItem();
-    if(!isCreative) {
-      entity.setDead();
-      if(entity.isDead) {
-        item.stackSize--;
-        if (!player.inventory.addItemStackToInventory(capturedMobVessel))
-        {
-        	entity.worldObj.spawnEntityInWorld(new EntityItem(entity.worldObj,entity.posX, entity.posY, entity.posZ, capturedMobVessel));
+    
+    synchronized (entity){
+    	
+    	if ( entity.isDead )
+        	return false;
+    	
+    	root.setString("id", entityId);
+        entity.writeToNBT(root);
+        capturedMobVessel.setTagCompound(root);
+        setDisplayNameFromEntityNameTag(capturedMobVessel, entity);
+        
+        player.swingItem();
+        if(!isCreative) {
+        	
+          entity.setDead();
+          if(entity.isDead) {
+            item.stackSize--;
+            if (!player.inventory.addItemStackToInventory(capturedMobVessel))
+            {
+            	entity.worldObj.spawnEntityInWorld(new EntityItem(entity.worldObj,entity.posX, entity.posY, entity.posZ, capturedMobVessel));
+            }
+            player.setCurrentItemOrArmor(0, item);
+            ((EntityPlayerMP) player).sendContainerToPlayer(player.inventoryContainer);
+            return true;
+          }
+        } else {
+          if (!player.inventory.addItemStackToInventory(capturedMobVessel)) //Inventory full, drop it in the world!
+          {
+          	entity.worldObj.spawnEntityInWorld(new EntityItem(entity.worldObj,entity.posX, entity.posY, entity.posZ, capturedMobVessel));
+          }
+          ((EntityPlayerMP) player).sendContainerToPlayer(player.inventoryContainer);
+          return true;
         }
-        player.setCurrentItemOrArmor(0, item);
-        ((EntityPlayerMP) player).sendContainerToPlayer(player.inventoryContainer);
-        return true;
-      }
-    } else {
-      if (!player.inventory.addItemStackToInventory(capturedMobVessel)) //Inventory full, drop it in the world!
-      {
-      	entity.worldObj.spawnEntityInWorld(new EntityItem(entity.worldObj,entity.posX, entity.posY, entity.posZ, capturedMobVessel));
-      }
-      ((EntityPlayerMP) player).sendContainerToPlayer(player.inventoryContainer);
-      return true;
-    }
+	}
+    // Uzumachi EndEdit
+    
     return false;
   }
 
